@@ -5,6 +5,7 @@ df = pandas.read_csv("hotels.csv", dtype={"id": str})
 # each dict reps 1 row data
 # easy to check when attributes are part of dict
 df_cards = pandas.read_csv("cards.csv", dtype=str).to_dict(orient="records")
+df_cards_security = pandas.read_csv("card_security.csv", dtype=str)
 
 
 class Hotel:
@@ -54,18 +55,33 @@ class CreditCard:
         else:
             return False
 
+
+# to inherit from CreditCard class, child class
+class SecureCreditCard(CreditCard):
+    def authenticate(self, given_password):
+        password = df_cards_security.loc[df_cards_security["number"] == self.num, "password"].squeeze()
+        print(password)
+        if password == given_password:
+            return True
+        else:
+            return False
+
+
 # main loop
 print(df)
 hotel_id = input("Enter the id of the hotel: ")
 hotel = Hotel(hotel_id)
 
 if hotel.available():
-    credit_card = CreditCard(num="1234")
+    credit_card = SecureCreditCard(num="1234567890123456")
     if credit_card.validate(expiration="12/26", holder="JOHN SMITH", cvc="123"):
-        hotel.book()
-        name = input("Enter your name: ")
-        reservation_ticket = ReservationTicket(client_name=name, hotel_obj=hotel)
-        print(reservation_ticket.generate())
+        if credit_card.authenticate(given_password="mypass"):
+            hotel.book()
+            name = input("Enter your name: ")
+            reservation_ticket = ReservationTicket(client_name=name, hotel_obj=hotel)
+            print(reservation_ticket.generate())
+        else:
+            print("Failed authenticating credit card ")
     else:
         print("There was a issue with your payment")
 else:
